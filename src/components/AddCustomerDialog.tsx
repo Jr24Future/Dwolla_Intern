@@ -8,6 +8,16 @@ import {
   TextField,
   Grid,
 } from '@mui/material';
+import { keyframes } from '@mui/system';
+
+const shake = keyframes`
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+`;
 
 interface AddCustomerDialogProps {
   open: boolean;
@@ -24,8 +34,9 @@ const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
   const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
+  const [shakeButton, setShakeButton] = useState(false);
 
-  // Function to reset all fields and then close the dialog
+  // Reset fields and close the dialog
   const reset = () => {
     setFirstName('');
     setLastName('');
@@ -34,33 +45,38 @@ const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
     onClose();
   };
 
-const handleCreate = async () => {
-  const newCustomer = { firstName, lastName, businessName, email };
-
-  try {
-    const response = await fetch('/api/customers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newCustomer),
-    });
-
-    if (!response.ok) {
-      console.error('Error creating customer');
+  const handleCreate = async () => {
+    // Validate required fields
+    if (!firstName || !lastName || !email || !email.includes('@')) {
+      setShakeButton(true);
+      setTimeout(() => setShakeButton(false), 500); // Reset shake after animation duration
       return;
     }
 
-    // Try to parse the response as text first
-    const text = await response.text();
-    // If the response body is empty, fall back to our newCustomer data
-    const createdCustomer = text ? JSON.parse(text) : newCustomer;
+    const newCustomer = { firstName, lastName, businessName, email };
 
-    onCustomerAdded(createdCustomer);
-    reset();
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
+    try {
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCustomer),
+      });
 
+      if (!response.ok) {
+        console.error('Error creating customer');
+        return;
+      }
+
+      // Handle empty response by checking if there is any text returned
+      const text = await response.text();
+      const createdCustomer = text ? JSON.parse(text) : newCustomer;
+
+      onCustomerAdded(createdCustomer);
+      reset();
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={reset} fullWidth maxWidth="sm">
@@ -107,7 +123,14 @@ const handleCreate = async () => {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={reset}>Cancel</Button>
-        <Button onClick={handleCreate} variant="contained">
+        <Button
+          onClick={handleCreate}
+          variant="contained"
+          sx={{
+            // Apply the shake animation if shakeButton is true
+            ...(shakeButton && { animation: `${shake} 0.5s ease-in-out` }),
+          }}
+        >
           Create
         </Button>
       </DialogActions>
