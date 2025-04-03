@@ -25,48 +25,47 @@ const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
   const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
 
-  // Handle form submission
-  const handleCreate = async () => {
-    const newCustomer = {
-      firstName,
-      lastName,
-      businessName,
-      email,
-    };
-
-    try {
-      const response = await fetch('/api/customers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCustomer),
-      });
-
-      if (!response.ok) {
-        // Handle error
-        console.error('Error creating customer');
-        return;
-      }
-
-      const createdCustomer = await response.json();
-      // Pass the newly created customer back to the parent
-      onCustomerAdded(createdCustomer);
-
-      // Reset fields and close dialog
-      setFirstName('');
-      setLastName('');
-      setBusinessName('');
-      setEmail('');
-      onClose();
-    } catch (error) {
-      console.error('Error:', error);
-    }
+  // Function to reset all fields and then close the dialog
+  const reset = () => {
+    setFirstName('');
+    setLastName('');
+    setBusinessName('');
+    setEmail('');
+    onClose();
   };
 
+const handleCreate = async () => {
+  const newCustomer = { firstName, lastName, businessName, email };
+
+  try {
+    const response = await fetch('/api/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newCustomer),
+    });
+
+    if (!response.ok) {
+      console.error('Error creating customer');
+      return;
+    }
+
+    // Try to parse the response as text first
+    const text = await response.text();
+    // If the response body is empty, fall back to our newCustomer data
+    const createdCustomer = text ? JSON.parse(text) : newCustomer;
+
+    onCustomerAdded(createdCustomer);
+    reset();
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={reset} fullWidth maxWidth="sm">
       <DialogTitle>Add Customer</DialogTitle>
       <DialogContent>
-        {/* Use a Grid to arrange the text fields in rows/columns */}
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12} sm={4}>
             <TextField
@@ -94,7 +93,6 @@ const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
               fullWidth
             />
           </Grid>
-
           <Grid item xs={12}>
             <TextField
               label="Email Address"
@@ -108,11 +106,8 @@ const AddCustomerDialog: React.FC<AddCustomerDialogProps> = ({
         </Grid>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          onClick={handleCreate}
-          variant="contained"
-        >
+        <Button onClick={reset}>Cancel</Button>
+        <Button onClick={handleCreate} variant="contained">
           Create
         </Button>
       </DialogActions>
