@@ -1,5 +1,6 @@
 .next
 node_modules
+.DS_Store
 
 data/customers.json
 src/pages/answer.tsx
