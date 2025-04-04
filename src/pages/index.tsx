@@ -17,6 +17,7 @@ import {
 import { AddRounded } from '@mui/icons-material';
 import AddCustomerDialog from '../components/AddCustomerDialog';
 
+// Define the Customer type and its collection
 export type Customer = {
   firstName: string;
   lastName: string;
@@ -26,12 +27,14 @@ export type Customer = {
 
 export type Customers = Customer[];
 
+// Define the error shape returned by our API
 export type ApiError = {
   code: string;
   message: string;
 };
 
 const Home = () => {
+  // Define a fetcher function for use with SWR
   const fetcher = async (url: string) => {
     const response = await fetch(url);
     const body = await response.json();
@@ -39,24 +42,24 @@ const Home = () => {
     return body;
   };
 
-  // Fetch customers with SWR
+  // Fetch the list of customers using SWR
   const { data: customers, error, isLoading, mutate } = useSWR<Customers, ApiError>(
     '/api/customers',
     fetcher
   );
 
-  // Dialog open/close state
+  // State to control whether the "Add Customer" dialog is open
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Callback after adding a customer
+  // Callback to update the customer list when a new customer is added
   const handleCustomerAdded = (newCustomer: Customer) => {
     if (customers) {
-      // Append new customer to the local list
+      // Append the new customer to the existing list without re-fetching data
       mutate([...customers, newCustomer], false);
     }
   };
 
-  // Count customers safely
+  // Safely compute the total number of customers
   const totalCustomers = customers?.length || 0;
 
   return (
@@ -66,15 +69,10 @@ const Home = () => {
       </Head>
       <main>
         <Container sx={{ py: 4 }}>
-          {/* Wrap everything in one Paper so the heading, button, and table share the same background */}
+          {/* Use a Paper component to wrap the header and table for a unified look */}
           <Paper sx={{ p: 2 }}>
-            {/* Top Bar: Heading + Add Button */}
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              mb={2}
-            >
+            {/* Top Bar: Displays total customers and the "Add Customer" button */}
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
               <Typography variant="h6">
                 {totalCustomers} Customers
               </Typography>
@@ -87,7 +85,7 @@ const Home = () => {
               </Button>
             </Box>
 
-            {/* Loading and Error States */}
+            {/* Display loading and error messages */}
             {isLoading && <Typography>Loading...</Typography>}
             {error && (
               <Typography color="error">
@@ -95,7 +93,7 @@ const Home = () => {
               </Typography>
             )}
 
-            {/* Customers Table */}
+            {/* Render the customers table when data is available */}
             {customers && (
               <TableContainer>
                 <Table>
@@ -124,7 +122,7 @@ const Home = () => {
             )}
           </Paper>
 
-          {/* Dialog for Adding New Customer */}
+          {/* Render the "Add Customer" dialog */}
           <AddCustomerDialog
             open={dialogOpen}
             onClose={() => setDialogOpen(false)}
